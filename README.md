@@ -7,7 +7,7 @@ The **Prelude Package** is a lightweight and modular utility library for Golang,
 
 ## Installation
 
-To use this prelude package in your Golang project, you can simply run{: style="color: red"}
+To use this prelude package in your Golang project, you can simply run:
 
 ```bash
 go get -u github.com/adoublef/prelude
