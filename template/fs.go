@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"maps"
 	"net/http"
 )
 
@@ -29,6 +30,14 @@ func (fsys *FS) MustParse(filenames ...string) Template {
 		panic(err)
 	}
 	return t
+}
+
+// Funcs adds the elements of the argument map to the template's function map.
+func (fsys *FS) Funcs(funcs ...template.FuncMap) *FS {
+	for _, f := range funcs {
+		maps.Copy(fsys.funcs, f)
+	}
+	return fsys
 }
 
 // NewFS allocates a new file system for templates
