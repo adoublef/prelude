@@ -1,8 +1,4 @@
-Certainly! Here's a sample README for a Golang prelude package:
-
----
-
-# Prelude Package for Golang
+# Prelude
 
 ![Golang Logo](https://golang.org/doc/gopher/gopherbw.png)
 
