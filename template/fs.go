@@ -25,7 +25,7 @@ func (fsys *FS) Parse(filenames ...string) (Template, error) {
 
 // MustParse will panic if unable to parse files
 func (fsys *FS) MustParse(filenames ...string) Template {
-	t, err := template.New(filenames[0]).Funcs(fsys.funcs).ParseFS(fsys.fsys, filenames...)
+	t, err := fsys.Parse(filenames...)
 	if err != nil {
 		panic(err)
 	}
