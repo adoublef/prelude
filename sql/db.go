@@ -21,12 +21,21 @@ type DB interface {
 	Exec(ctx context.Context, query string, args ...any) (rowsAffected int64, err error)
 	Query(ctx context.Context, query string, args ...any) (ScanIterator, error)
 	QueryRow(ctx context.Context, query string, args ...any) Scanner
+	Begin() (*Tx, error)
 }
 
 var _ DB = (*Conn)(nil)
 
 type Conn struct {
 	rwc *sql.DB
+}
+
+func (c *Conn) Begin() (*Tx, error) {
+	tx, err := c.rwc.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("begin transactions: %w", err)
+	}
+	return &Tx{tx}, nil
 }
 
 // Query implements DB.
@@ -88,4 +97,45 @@ func Up(ctx context.Context, db *Conn, fsys fs.FS) error {
 		return fmt.Errorf("migrate up: %w", err)
 	}
 	return nil
+}
+
+type Tx struct {
+	rwc *sql.Tx
+}
+
+// Rollback aborts the transaction.
+func (tx *Tx) Rollback() error {
+	return tx.rwc.Rollback()
+}
+
+// Commit commits the transaction.
+func (tx *Tx) Commit() error {
+	return tx.rwc.Commit()
+}
+
+// Exec executes a query without returning any rows.
+func (c *Tx) Exec(ctx context.Context, query string, args ...any) (int64, error) {
+	rs, err := c.rwc.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("execute: %w", err)
+	}
+	n, err := rs.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("rows affected: %w", err)
+	}
+	return n, nil
+}
+
+// Query implements Tx.
+func (c *Tx) Query(ctx context.Context, query string, args ...any) (ScanIterator, error) {
+	rs, err := c.rwc.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+	return rs, nil
+}
+
+// QueryRow executes a query that is expected to return at most one row.
+func (c *Tx) QueryRow(ctx context.Context, query string, args ...any) Scanner {
+	return c.rwc.QueryRowContext(ctx, query, args...)
 }
