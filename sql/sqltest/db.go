@@ -10,7 +10,7 @@ import (
 )
 
 // RoundTrip will create a database instance to use with testing
-func RoundTrip(fsys fs.FS, f func(t *testing.T, db sql.DB)) func(t *testing.T) {
+func RoundTrip(fsys fs.FS, f func(t *testing.T, db *sql.DB)) func(t *testing.T) {
 	return func(t *testing.T) {
 		dsn := filepath.Join(t.TempDir(), "test.db")
 		db, err := sql.Open(dsn)

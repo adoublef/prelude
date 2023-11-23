@@ -16,22 +16,14 @@ const (
 	args       = "_fk=true&_journal_mod=wal&_synchronous=normal&_timeout=5000"
 )
 
-type DB interface {
-	Close() error
-	Exec(ctx context.Context, query string, args ...any) (rowsAffected int64, err error)
-	Query(ctx context.Context, query string, args ...any) (ScanIterator, error)
-	QueryRow(ctx context.Context, query string, args ...any) Scanner
-	Begin() (*Tx, error)
-}
+var _ ReadWriter = (*DB)(nil)
 
-var _ DB = (*Conn)(nil)
-
-type Conn struct {
+type DB struct {
 	rwc *sql.DB
 }
 
-func (c *Conn) Begin() (*Tx, error) {
-	tx, err := c.rwc.Begin()
+func (db *DB) Begin() (*Tx, error) {
+	tx, err := db.rwc.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("begin transactions: %w", err)
 	}
@@ -39,8 +31,8 @@ func (c *Conn) Begin() (*Tx, error) {
 }
 
 // Query implements DB.
-func (c *Conn) Query(ctx context.Context, query string, args ...any) (ScanIterator, error) {
-	rs, err := c.rwc.QueryContext(ctx, query, args...)
+func (db *DB) Query(ctx context.Context, query string, args ...any) (ScanIterator, error) {
+	rs, err := db.rwc.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query: %w", err)
 	}
@@ -48,8 +40,8 @@ func (c *Conn) Query(ctx context.Context, query string, args ...any) (ScanIterat
 }
 
 // Exec executes a query without returning any rows.
-func (c *Conn) Exec(ctx context.Context, query string, args ...any) (int64, error) {
-	rs, err := c.rwc.ExecContext(ctx, query, args...)
+func (db *DB) Exec(ctx context.Context, query string, args ...any) (int64, error) {
+	rs, err := db.rwc.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("execute: %w", err)
 	}
@@ -61,22 +53,22 @@ func (c *Conn) Exec(ctx context.Context, query string, args ...any) (int64, erro
 }
 
 // QueryRow executes a query that is expected to return at most one row.
-func (c *Conn) QueryRow(ctx context.Context, query string, args ...any) Scanner {
-	return c.rwc.QueryRowContext(ctx, query, args...)
+func (db *DB) QueryRow(ctx context.Context, query string, args ...any) Scanner {
+	return db.rwc.QueryRowContext(ctx, query, args...)
 }
 
 // Close closes the database and prevents new queries from starting. C
-func (c *Conn) Close() error {
-	return c.rwc.Close()
+func (db *DB) Close() error {
+	return db.rwc.Close()
 }
 
 // Open opens a database connection for the given sqlite file.
-func Open(dsn string) (*Conn, error) {
+func Open(dsn string) (*DB, error) {
 	db, err := sql.Open(driverName, dsn+"?"+args)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite3: %w", err)
 	}
-	return &Conn{db}, nil
+	return &DB{db}, nil
 }
 
 type Scanner interface {
@@ -91,13 +83,15 @@ type ScanIterator interface {
 }
 
 // Up from the current version.
-func Up(ctx context.Context, db *Conn, fsys fs.FS) error {
+func Up(ctx context.Context, db *DB, fsys fs.FS) error {
 	err := migrate.Up(ctx, db.rwc, fsys)
 	if err != nil {
 		return fmt.Errorf("migrate up: %w", err)
 	}
 	return nil
 }
+
+var _ ReadWriter = (*Tx)(nil)
 
 type Tx struct {
 	rwc *sql.Tx
@@ -114,8 +108,8 @@ func (tx *Tx) Commit() error {
 }
 
 // Exec executes a query without returning any rows.
-func (c *Tx) Exec(ctx context.Context, query string, args ...any) (int64, error) {
-	rs, err := c.rwc.ExecContext(ctx, query, args...)
+func (tx *Tx) Exec(ctx context.Context, query string, args ...any) (int64, error) {
+	rs, err := tx.rwc.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("execute: %w", err)
 	}
@@ -127,8 +121,8 @@ func (c *Tx) Exec(ctx context.Context, query string, args ...any) (int64, error)
 }
 
 // Query implements Tx.
-func (c *Tx) Query(ctx context.Context, query string, args ...any) (ScanIterator, error) {
-	rs, err := c.rwc.QueryContext(ctx, query, args...)
+func (tx *Tx) Query(ctx context.Context, query string, args ...any) (ScanIterator, error) {
+	rs, err := tx.rwc.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query: %w", err)
 	}
@@ -136,6 +130,20 @@ func (c *Tx) Query(ctx context.Context, query string, args ...any) (ScanIterator
 }
 
 // QueryRow executes a query that is expected to return at most one row.
-func (c *Tx) QueryRow(ctx context.Context, query string, args ...any) Scanner {
-	return c.rwc.QueryRowContext(ctx, query, args...)
+func (tx *Tx) QueryRow(ctx context.Context, query string, args ...any) Scanner {
+	return tx.rwc.QueryRowContext(ctx, query, args...)
+}
+
+type ReadWriter interface {
+	Reader
+	Writer
+}
+
+type Reader interface {
+	Exec(ctx context.Context, query string, args ...any) (rowsAffected int64, err error)
+}
+
+type Writer interface {
+	Query(ctx context.Context, query string, args ...any) (ScanIterator, error)
+	QueryRow(ctx context.Context, query string, args ...any) Scanner
 }
