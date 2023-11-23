@@ -147,3 +147,7 @@ type Writer interface {
 	Query(ctx context.Context, query string, args ...any) (ScanIterator, error)
 	QueryRow(ctx context.Context, query string, args ...any) Scanner
 }
+
+var (
+	ErrNoRows = sql.ErrNoRows
+)
