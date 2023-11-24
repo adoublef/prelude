@@ -139,11 +139,11 @@ type ReadWriter interface {
 	Writer
 }
 
-type Reader interface {
+type Writer interface {
 	Exec(ctx context.Context, query string, args ...any) (rowsAffected int64, err error)
 }
 
-type Writer interface {
+type Reader interface {
 	Query(ctx context.Context, query string, args ...any) (ScanIterator, error)
 	QueryRow(ctx context.Context, query string, args ...any) Scanner
 }
