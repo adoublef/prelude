@@ -13,6 +13,12 @@ To use this prelude package in your Golang project, you can simply run:
 go get -u github.com/adoublef/prelude
 ```
 
+## Additional Packages
+
+- [matryer/is](https://github.com/matryer/is) - Package is provides a lightweight extension to the standard library's testing capabilities.
+- [samber/lo](https://github.com/samber/lo) - A Lodash-style Go library.
+- [testcontainers](https://github.com/testcontainers/testcontainers-go) - Testcontainers is a package that makes it simple to create and clean up container-based dependencies for automated integration/smoke tests.
+
 ## Contribution
 
 Contributions are welcome! If you have any ideas, bug fixes, or improvements, feel free to open an issue or submit a pull request.
