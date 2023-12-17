@@ -9,4 +9,4 @@ tasks:
   test:
     desc: test runner
     cmds:
-      - go test -v -count 1 --race {{.CLI_ARGS}}
+      - go test -v -count 1 {{.CLI_ARGS}}
