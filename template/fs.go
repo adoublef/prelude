@@ -1,6 +1,7 @@
 package template
 
 import (
+	"errors"
 	"html/template"
 	"io"
 	"io/fs"
@@ -14,11 +15,13 @@ type FS struct {
 	funcs template.FuncMap
 }
 
+var ErrParseTemplate = errors.New("template: parse template files")
+
 // Parse parses the named files and associates the resulting templates with t
 func (fsys *FS) Parse(filenames ...string) (Template, error) {
 	t, err := template.New(filenames[0]).Funcs(fsys.funcs).ParseFS(fsys.fsys, filenames...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(ErrParseTemplate, err)
 	}
 	return t, nil
 }
