@@ -15,7 +15,7 @@ import (
 var fsys embed.FS
 
 func TestSQL(t *testing.T) {
-	t.Run("query", st.RoundTrip(fsys, func(t *testing.T, db *sql.DB) {
+	t.Run("query", st.RoundTrip(fsys, func(t testing.TB, db *sql.DB) {
 		var (
 			is  = is.New(t)
 			ctx = context.Background()
@@ -40,7 +40,7 @@ func TestSQL(t *testing.T) {
 		is.Equal(bad, false) // does not exists
 	}))
 
-	t.Run("tx.query", st.RoundTrip(fsys, func(t *testing.T, db *sql.DB) {
+	t.Run("tx.query", st.RoundTrip(fsys, func(t testing.TB, db *sql.DB) {
 		var (
 			is  = is.New(t)
 			ctx = context.Background()
